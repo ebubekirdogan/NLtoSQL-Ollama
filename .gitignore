@@ -1,0 +1,12 @@
+# Python sanal ortam
+venv/
+
+# Python cache dosyaları
+__pycache__/
+*.pyc
+
+# Ortam değişkenleri (ileride API key falan eklersek diye, şimdiden alışkanlık)
+.env
+
+# IDE ayarları
+.vscode/
