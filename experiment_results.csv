@@ -1,0 +1,29 @@
+id,category,question,strategy,success,attempts,generated_sql,is_cannot_answer,correct
+1,basit,Kaç makine var?,zero_shot,True,1,SELECT COUNT(machine_id) FROM machines,False,True
+1,basit,Kaç makine var?,few_shot,True,1,SELECT COUNT(*) FROM machines;,False,True
+2,basit,Tüm makinelerin isimlerini listele.,zero_shot,True,1,SELECT machine_name FROM machines;,False,True
+2,basit,Tüm makinelerin isimlerini listele.,few_shot,True,1,SELECT machine_name FROM machines;,False,True
+3,basit,M03 makinesinin modeli nedir?,zero_shot,True,1,SELECT model FROM machines WHERE machine_id = 'M03',False,True
+3,basit,M03 makinesinin modeli nedir?,few_shot,True,1,SELECT model FROM machines WHERE machine_id = 'M03';,False,True
+4,orta,Toplam kaç duruş kaydı var?,zero_shot,True,1,SELECT COUNT(*) FROM downtime,False,True
+4,orta,Toplam kaç duruş kaydı var?,few_shot,True,1,SELECT COUNT(*) FROM downtime;,False,True
+5,orta,En sık görülen duruş sebebi nedir?,zero_shot,True,1,SELECT reason AS most_common_reason FROM downtime GROUP BY reason ORDER BY COUNT(*) DESC LIMIT 1;,False,True
+5,orta,En sık görülen duruş sebebi nedir?,few_shot,True,1,SELECT reason FROM downtime GROUP BY reason ORDER BY COUNT(*) DESC LIMIT 1,False,True
+6,orta,Ortalama üretim süresi nedir?,zero_shot,True,1,SELECT AVG(production_time) AS average_production_time FROM production,False,True
+6,orta,Ortalama üretim süresi nedir?,few_shot,True,1,SELECT AVG(production_time) AS average_production_time FROM production,False,True
+7,join,En fazla duran makinenin adı nedir?,zero_shot,True,1,SELECT T1.machine_name FROM machines AS T1 JOIN downtime AS T2 ON T1.machine_id = T2.machine_id ORDER BY T2.duration DESC LIMIT 1,False,False
+7,join,En fazla duran makinenin adı nedir?,few_shot,True,1,SELECT m.machine_name FROM machines m JOIN downtime d ON m.machine_id = d.machine_id ORDER BY d.duration DESC LIMIT 1,False,False
+8,join,Hangi makinenin toplam üretim miktarı en yüksek?,zero_shot,True,1,"SELECT T1.machine_name, SUM(T2.quantity) AS total_production FROM machines AS T1 JOIN production AS T2 ON T1.machine_id = T2.machine_id GROUP BY T1.machine_name ORDER BY total_production DESC LIMIT 1",False,True
+8,join,Hangi makinenin toplam üretim miktarı en yüksek?,few_shot,True,1,"SELECT m.machine_name, SUM(p.quantity) as total_production FROM machines m JOIN production p ON m.machine_id = p.machine_id GROUP BY m.machine_id, m.machine_name ORDER BY total_production DESC LIMIT 1",False,True
+9,join,En az bakım yapılan makinenin adı ve modeli nedir?,zero_shot,True,1,"SELECT T1.machine_name, T1.model FROM machines AS T1 JOIN maintenance AS T2 ON T1.machine_id = T2.machine_id GROUP BY T1.machine_id ORDER BY COUNT(T2.maintenance_id) DESC LIMIT 1",False,False
+9,join,En az bakım yapılan makinenin adı ve modeli nedir?,few_shot,True,1,"SELECT m.machine_name, m.model FROM machines m LEFT JOIN maintenance mt ON m.machine_id = mt.machine_id GROUP BY m.machine_id, m.machine_name, m.model ORDER BY COUNT(*) ASC LIMIT 1",False,True
+10,tarih,Son 30 günde en fazla duran makine hangisi?,zero_shot,True,1,SELECT machine_name FROM machines WHERE machine_id = (SELECT machine_id FROM downtime GROUP BY machine_id ORDER BY SUM(duration) DESC LIMIT 1);,False,False
+10,tarih,Son 30 günde en fazla duran makine hangisi?,few_shot,True,1,"SELECT m.machine_name FROM machines m JOIN downtime d ON m.machine_id = d.machine_id WHERE d.date BETWEEN date('now','-30 days') AND date('now') ORDER BY d.duration DESC LIMIT 1;",False,True
+11,tarih,Son 60 günde kaç bakım yapıldı?,zero_shot,True,1,"SELECT COUNT(maintenance_id) AS maintenance_count FROM maintenance WHERE date BETWEEN date('now','-60 days') AND date('now')",False,True
+11,tarih,Son 60 günde kaç bakım yapıldı?,few_shot,True,1,"SELECT COUNT(*) FROM maintenance WHERE date >= date('now','-60 days');",False,True
+12,cevaplanamaz,Hangi makinenin elektrik tüketimi en yüksek?,zero_shot,True,1,SELECT 'CANNOT_ANSWER' AS note;,True,True
+12,cevaplanamaz,Hangi makinenin elektrik tüketimi en yüksek?,few_shot,True,1,SELECT 'CANNOT_ANSWER' AS note;,True,True
+13,cevaplanamaz,Sensör verilerine göre hangi makinenin titreşim değeri en yüksek?,zero_shot,True,1,SELECT 'CANNOT_ANSWER' AS note;,True,True
+13,cevaplanamaz,Sensör verilerine göre hangi makinenin titreşim değeri en yüksek?,few_shot,True,1,"SELECT m.machine_name FROM machines m JOIN production p ON m.machine_id = p.machine_id GROUP BY m.machine_id, m.machine_name ORDER BY AVG(p.quantity) DESC LIMIT 1",False,False
+14,cevaplanamaz,Hangi operatör en çok üretim yapmış?,zero_shot,True,1,SELECT machine_name FROM machines WHERE machine_id = (SELECT machine_id FROM production GROUP BY machine_id ORDER BY SUM(quantity) DESC LIMIT 1),False,False
+14,cevaplanamaz,Hangi operatör en çok üretim yapmış?,few_shot,True,1,SELECT 'CANNOT_ANSWER' AS note;,True,True

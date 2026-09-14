@@ -43,42 +43,31 @@ TEST_QUESTIONS = [
     },
 
     # --- JOIN GEREKTİREN ---
-    {
+   {
         "id": 7,
         "category": "join",
         "question": "En fazla duran makinenin adı nedir?",
-        "reference_sql": """SELECT m.machine_name FROM machines m
-                             JOIN downtime d ON m.machine_id = d.machine_id
-                             GROUP BY m.machine_id, m.machine_name
-                             ORDER BY SUM(d.duration) DESC LIMIT 1;"""
+        "reference_sql": "SELECT m.machine_id, m.machine_name FROM machines m JOIN downtime d ON m.machine_id = d.machine_id GROUP BY m.machine_id, m.machine_name ORDER BY SUM(d.duration) DESC LIMIT 1;"
     },
-    {
+     {
         "id": 8,
         "category": "join",
         "question": "Hangi makinenin toplam üretim miktarı en yüksek?",
-        "reference_sql": """SELECT m.machine_name FROM machines m
-                             JOIN production p ON m.machine_id = p.machine_id
-                             GROUP BY m.machine_id, m.machine_name
-                             ORDER BY SUM(p.quantity) DESC LIMIT 1;"""
+        "reference_sql": "SELECT m.machine_id, m.machine_name FROM machines m JOIN production p ON m.machine_id = p.machine_id GROUP BY m.machine_id, m.machine_name ORDER BY SUM(p.quantity) DESC LIMIT 1;"
     },
-    {
+   {
         "id": 9,
         "category": "join",
         "question": "En az bakım yapılan makinenin adı ve modeli nedir?",
-        "reference_sql": """SELECT m.machine_name, m.model FROM machines m
-                             JOIN maintenance mt ON m.machine_id = mt.machine_id
-                             GROUP BY m.machine_id, m.machine_name, m.model
-                             ORDER BY COUNT(*) ASC LIMIT 1;"""
+        "reference_sql": "SELECT m.machine_id, m.machine_name, m.model FROM machines m JOIN maintenance mt ON m.machine_id = mt.machine_id GROUP BY m.machine_id, m.machine_name, m.model ORDER BY COUNT(*) ASC LIMIT 1;"
     },
 
     # --- TARİH FİLTRELİ ---
-    {
+        {
         "id": 10,
         "category": "tarih",
         "question": "Son 30 günde en fazla duran makine hangisi?",
-        "reference_sql": """SELECT machine_id FROM downtime
-                             WHERE date >= DATE('now', '-30 days')
-                             GROUP BY machine_id ORDER BY SUM(duration) DESC LIMIT 1;"""
+        "reference_sql": "SELECT m.machine_id, m.machine_name FROM machines m JOIN downtime d ON m.machine_id = d.machine_id WHERE d.date >= DATE('now', '-30 days') GROUP BY m.machine_id, m.machine_name ORDER BY SUM(d.duration) DESC LIMIT 1;"
     },
     {
         "id": 11,
