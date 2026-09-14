@@ -2,7 +2,7 @@
 from schema_utils import get_schema_text # DB yapısının metinsel temsilini almak için fonksiyonu import et.
 from sql_generator import build_prompt, call_llm, clean_sql # DB yapısına ve kullanıcı sorusuna göre SQL sorgusu üretmek için gerekli fonksiyonları import et.
 from db_executor import execute_sql # SQL sorgusu guvenliğini kontrol ederek çalıştırmak için fonksiyonu import et.
-
+from sql_generator import build_prompt, build_few_shot_prompt, call_llm, clean_sql
 # Hatalı SQL + hata mesajını modele geri gönderecek düzeltme prompt'u.
 def build_correction_prompt(question, schema_text, previous_sql, error_message):
     return f"""You are an expert SQL generator. You write SQLite queries.
@@ -26,39 +26,31 @@ No explanations, no markdown formatting. The query must be a SELECT statement on
 Corrected SQL:"""
 
 # Kullanici sorusunu SQL'e cevir, SQL'i calistir ve sonucu dondur. Hata olursa hatayi modele geri gondererek SQL'i duzeltmeye calis.
-def run_query(question, db_path="cnc.db", max_attempts=3): # en fazla 3 kere dene.
+def run_query(question, db_path="cnc.db", max_attempts=3, strategy="zero_shot"):
     schema_text = get_schema_text(db_path)
-    sql = None # Henuz SQL uretmedik, None olarak baslat.
-    error_message = None # Henuz hata almadik, None olarak baslat.
+    sql = None
+    error_message = None
 
-    for attempt in range(1, max_attempts + 1): # (1,4) -> 1,2,3 denemeleri yapacak.(4u dahil etmez.)
+    for attempt in range(1, max_attempts + 1):
         if attempt == 1:
-            prompt = build_prompt(question, schema_text) # ilk deneme ise normal SQL uretme promptunu kullan.
-        else:
+            if strategy == "few_shot":
+                prompt = build_few_shot_prompt(question, schema_text)
+            else:
+                prompt = build_prompt(question, schema_text)
+        else: # ilk deneme degilse 
             prompt = build_correction_prompt(question, schema_text, sql, error_message)
 
-        raw_output = call_llm(prompt) # modelin ham ciktisi raw_output olarak alinir.
-        sql = clean_sql(raw_output)   # clean_sql ile modelin ciktisindan sadece SQL sorgusu alinir.
+        raw_output = call_llm(prompt)
+        sql = clean_sql(raw_output)
 
         try:
-            result = execute_sql(sql, db_path) # SQL sorgusu guvenli mi diye kontrol edilir ve calistirilir. Sonuc result olarak alinir.
-            return { # SQL basarili ise;
-                "success": True,
-                "sql": sql,
-                "result": result,
-                "attempts": attempt
-            }
-        except Exception as e: 
+            result = execute_sql(sql, db_path)
+            return {"success": True, "sql": sql, "result": result, "attempts": attempt}
+        except Exception as e:
             error_message = str(e)
             print(f"[Deneme {attempt}] Hata: {error_message}")
-            # döngü devam eder
 
-    return {
-        "success": False,
-        "sql": sql,
-        "error": error_message,
-        "attempts": max_attempts
-    }
+    return {"success": False, "sql": sql, "error": error_message, "attempts": max_attempts}
 
 
 # Hızlı test

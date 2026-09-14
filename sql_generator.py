@@ -1,6 +1,5 @@
 # SQL GENERATION
 import re
-from urllib import response
 import ollama # pythondan ollama modelleri ile iliski kurmak icin
 from schema_utils import get_schema_text # schema_utilsde yazilan fonk.nu import et.
 
@@ -22,9 +21,53 @@ Rules:
 
 Question: {question}
 
-SQL:""" # simdi SQL sorgusunu yazmaya basla talimatini modele ver.
+SQL:"""
 
-# promptu modele gonderir, ham metin cevabi dondurur 
+
+# Few-shot icin kullanilacak sabit ornekler (! test setindeki sorularla farkli sorular)
+FEW_SHOT_EXAMPLES = [
+    {
+        "question": "Kaç adet duruş kaydı var?",
+        "sql": "SELECT COUNT(*) FROM downtime;"
+    },
+    {
+        "question": "En çok üretim yapılan parça hangisi?",
+        "sql": "SELECT part_name, SUM(quantity) as total FROM production GROUP BY part_name ORDER BY total DESC LIMIT 1;"
+    },
+    {
+        "question": "Hangi makinenin bakım sayısı en fazla?",
+        "sql": "SELECT m.machine_name FROM machines m JOIN maintenance mt ON m.machine_id = mt.machine_id GROUP BY m.machine_id, m.machine_name ORDER BY COUNT(*) DESC LIMIT 1;"
+    },
+]
+
+# few-shot promptu olustur.
+def build_few_shot_prompt(question, schema_text):
+    examples_text = ""
+    for ex in FEW_SHOT_EXAMPLES:
+        examples_text += f"Question: {ex['question']}\nSQL: {ex['sql']}\n\n"
+
+    return f"""You are an expert SQL generator. You write SQLite queries.
+
+Database schema:
+{schema_text}
+
+Rules:
+- Only output the SQL query, nothing else.
+- Do not include explanations or markdown formatting.
+- Use only the tables and columns listed above.
+- The query must be a SELECT statement only.
+- If the question cannot be answered using the schema above (e.g. it refers to data that does not exist in any table), respond with exactly: SELECT 'CANNOT_ANSWER' AS note;
+
+Here are some examples:
+
+{examples_text}Now answer this question:
+
+Question: {question}
+
+SQL:"""
+
+
+# promptu modele gonderir, ham metin cevabi dondurur
 def call_llm(prompt):
     response = ollama.chat(
         model=MODEL_NAME,
@@ -46,7 +89,6 @@ def generate_sql(question, db_path="cnc.db"):
     prompt = build_prompt(question, schema_text) # LLM'e gonderilecek promptu olustur.
 
     return call_llm(prompt)
-   
 
 
 # ```sql ... ``` veya ``` ... ``` bloklarını yakala
