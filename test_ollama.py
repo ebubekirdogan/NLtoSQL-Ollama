@@ -10,4 +10,4 @@ response = ollama.chat(      # terminalden yaptigimiz konusma islemini  Python'd
     ]
 )
 # response message ile modelin mesaj kismina gidilir ve de content ile modelin urettigi "ham cikti" alinir.
-print(response["message"]["content"]) 
+print(response["message"]["content"])  
